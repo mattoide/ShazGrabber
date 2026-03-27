@@ -58,7 +58,7 @@ def _worker(session_id, songs, output_folder):
 def start():
     data   = request.get_json(force=True) or {}
     songs  = data.get("songs", [])
-    folder = data.get("folder", config.DOWNLOAD_FOLDER)
+    folder = data.get("folder") or config.DOWNLOAD_FOLDER
 
     if not songs:
         return jsonify({"error": "Nessuna canzone selezionata"}), 400

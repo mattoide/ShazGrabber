@@ -31,9 +31,9 @@ function setStep(n) {
   for (let i = 1; i <= 4; i++) {
     const ind   = $(`step-ind-${i}`);
     const panel = $(`panel-${i}`);
-    if (i < n)  { ind.className = "step done"; }
-    if (i === n){ ind.className = "step active"; panel.classList.remove("hidden"); }
-    if (i > n)  { ind.className = "step"; panel.classList.add("hidden"); }
+    if (i < n)  { ind.className = "step done";   panel.classList.add("hidden"); }
+    if (i === n){ ind.className = "step active";  panel.classList.remove("hidden"); }
+    if (i > n)  { ind.className = "step";         panel.classList.add("hidden"); }
   }
   // Colora le linee tra step
   document.querySelectorAll(".step-line").forEach((el, idx) => {
@@ -129,7 +129,11 @@ $("btn-scan").addEventListener("click", async () => {
     (data.total > 10 ? `<div style="color:var(--txt-m)">… e altri ${data.total - 10}</div>` : "");
   $("folder-result").classList.remove("hidden");
   $("btn-step2").disabled = false;
-  toast(`${data.total} file trovati`, "ok");
+  if (data.total === 0) {
+    toast("Nessun file audio trovato — tutte le canzoni saranno mancanti", "ok");
+  } else {
+    toast(`${data.total} file trovati`, "ok");
+  }
 });
 
 $("btn-back-1").addEventListener("click", () => setStep(1));
@@ -244,7 +248,13 @@ $("btn-step3").addEventListener("click", () => {
   State._songsToDownload = songs;
   setStep(4);
   $("dl-total").textContent = songs.length;
-  startDownload(songs);
+  $("btn-start-dl").disabled = false;
+  $("dl-progress-label").textContent = `Pronto — ${songs.length} canzoni da scaricare`;
+});
+
+$("btn-start-dl").addEventListener("click", () => {
+  $("btn-start-dl").disabled = true;
+  startDownload(State._songsToDownload);
 });
 
 // ── STEP 4: Download ────────────────────────────────────────

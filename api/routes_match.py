@@ -16,8 +16,8 @@ def run():
 
     if not songs:
         return jsonify({"error": "Carica prima il CSV Shazam"}), 400
-    if not files:
-        return jsonify({"error": "Scansiona prima la cartella locale"}), 400
+    if files is None:
+        files = []
 
     matched, missing, ambiguous = match_library(songs, files, threshold)
 
