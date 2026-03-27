@@ -1,0 +1,13 @@
+# Web framework
+flask>=3.0
+flask-cors>=4.0
+
+# Download audio da YouTube
+yt-dlp>=2024.1
+
+# Fuzzy matching nomi file
+rapidfuzz>=3.6
+
+# Dipendenze di sistema (non Python):
+# ffmpeg — richiesto da yt-dlp per la conversione in MP3
+#   Installa con: winget install ffmpeg

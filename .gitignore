@@ -12,7 +12,9 @@ shazam_download_logs/
 
 # Log
 *.log
-*.txt
+
+# Tieni requirements.txt
+!requirements.txt
 
 # OS
 .DS_Store
