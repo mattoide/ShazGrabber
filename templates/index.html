@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShazamSync</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">ShazamSync</span>
+    </div>
+    <div class="header-sub">Scarica la tua libreria Shazam in MP3</div>
+  </div>
+</header>
+
+<!-- STEPPER -->
+<div class="stepper">
+  <div class="step active" id="step-ind-1">
+    <div class="step-circle">1</div>
+    <div class="step-label">CSV Shazam</div>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step-ind-2">
+    <div class="step-circle">2</div>
+    <div class="step-label">Cartella locale</div>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step-ind-3">
+    <div class="step-circle">3</div>
+    <div class="step-label">Analisi</div>
+  </div>
+  <div class="step-line"></div>
+  <div class="step" id="step-ind-4">
+    <div class="step-circle">4</div>
+    <div class="step-label">Download</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- ── STEP 1: CSV ── -->
+  <section class="panel" id="panel-1">
+    <h2 class="panel-title">Carica la libreria Shazam</h2>
+    <p class="panel-desc">Esporta il CSV dall'app Shazam: <em>Libreria → ··· → Esporta libreria</em></p>
+
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">⬆</div>
+      <div class="dropzone-text">Trascina il file CSV qui<br><span>o clicca per selezionare</span></div>
+      <input type="file" id="csv-input" accept=".csv" hidden>
+    </div>
+
+    <div class="csv-preview hidden" id="csv-preview">
+      <div class="preview-header">
+        <span id="csv-count" class="badge badge-accent">0 canzoni</span>
+        <button class="btn-ghost btn-sm" id="csv-remove">✕ Rimuovi</button>
+      </div>
+      <table class="table" id="csv-table">
+        <thead><tr><th>#</th><th>Titolo</th><th>Artista</th><th>Data</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn btn-primary" id="btn-step1" disabled>Avanti →</button>
+    </div>
+  </section>
+
+  <!-- ── STEP 2: FOLDER ── -->
+  <section class="panel hidden" id="panel-2">
+    <h2 class="panel-title">Cartella MP3 locale</h2>
+    <p class="panel-desc">Seleziona la cartella che contiene i tuoi file audio già scaricati.</p>
+
+    <div class="folder-row">
+      <input type="text" class="input-text" id="folder-path"
+             placeholder="C:\Users\matto\Videos\aTubeCatcher">
+      <button class="btn btn-secondary" id="btn-browse">📂 Sfoglia</button>
+    </div>
+    <button class="btn btn-primary" id="btn-scan" style="margin-top:12px">Scansiona cartella</button>
+
+    <div class="folder-result hidden" id="folder-result">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value" id="folder-count">0</div>
+          <div class="stat-label">File trovati</div>
+        </div>
+      </div>
+      <div class="file-list" id="file-list"></div>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn btn-ghost" id="btn-back-1">← Indietro</button>
+      <button class="btn btn-primary" id="btn-step2" disabled>Avanti →</button>
+    </div>
+  </section>
+
+  <!-- ── STEP 3: MATCH ── -->
+  <section class="panel hidden" id="panel-3">
+    <h2 class="panel-title">Analisi libreria</h2>
+    <p class="panel-desc">Confronto fuzzy tra le canzoni Shazam e i file locali.</p>
+
+    <div class="threshold-row">
+      <label>Soglia similarità: <strong id="threshold-val">72</strong>%</label>
+      <input type="range" id="threshold" min="50" max="95" value="72">
+    </div>
+    <button class="btn btn-primary" id="btn-match">Esegui analisi</button>
+
+    <div class="match-results hidden" id="match-results">
+      <div class="stats-row">
+        <div class="stat-card stat-ok">
+          <div class="stat-value" id="count-matched">0</div>
+          <div class="stat-label">Trovate ✓</div>
+        </div>
+        <div class="stat-card stat-err">
+          <div class="stat-value" id="count-missing">0</div>
+          <div class="stat-label">Mancanti ✗</div>
+        </div>
+        <div class="stat-card stat-warn">
+          <div class="stat-value" id="count-ambiguous">0</div>
+          <div class="stat-label">Incerte ?</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="missing">Mancanti</button>
+        <button class="tab" data-tab="ambiguous">Incerte</button>
+        <button class="tab" data-tab="matched">Trovate</button>
+      </div>
+
+      <div class="tab-content" id="tab-missing">
+        <div class="list-controls">
+          <label><input type="checkbox" id="select-all"> Seleziona tutto</label>
+          <span id="selected-count" class="badge badge-accent">0 selezionate</span>
+        </div>
+        <div class="song-list" id="missing-list"></div>
+      </div>
+      <div class="tab-content hidden" id="tab-ambiguous">
+        <div class="song-list" id="ambiguous-list"></div>
+      </div>
+      <div class="tab-content hidden" id="tab-matched">
+        <div class="song-list" id="matched-list"></div>
+      </div>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn btn-ghost" id="btn-back-2">← Indietro</button>
+      <button class="btn btn-primary" id="btn-step3" disabled>Scarica selezionate →</button>
+    </div>
+  </section>
+
+  <!-- ── STEP 4: DOWNLOAD ── -->
+  <section class="panel hidden" id="panel-4">
+    <h2 class="panel-title">Download in corso</h2>
+
+    <div class="download-folder-row">
+      <label>Salva in:</label>
+      <input type="text" class="input-text" id="dl-folder"
+             placeholder="Lascia vuoto per usare la cartella 'downloads' del progetto">
+      <button class="btn btn-secondary btn-sm" id="btn-dl-browse">📂</button>
+    </div>
+
+    <div class="progress-global">
+      <div class="progress-header">
+        <span id="dl-progress-label">In attesa…</span>
+        <button class="btn btn-ghost btn-sm" id="btn-cancel">⏹ Stop</button>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="dl-progress-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-stats">
+        <span id="dl-done">0</span> / <span id="dl-total">0</span> &nbsp;•&nbsp;
+        <span class="text-ok" id="dl-ok">0 ok</span> &nbsp;•&nbsp;
+        <span class="text-err" id="dl-err">0 errori</span>
+      </div>
+    </div>
+
+    <div class="current-song hidden" id="current-song-box">
+      <div class="current-label">Download corrente:</div>
+      <div class="current-name" id="current-song-name"></div>
+      <div class="progress-bar-wrap" style="margin-top:8px">
+        <div class="progress-bar" id="song-progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="log-box" id="log-box"></div>
+
+    <div class="panel-footer" id="dl-footer" style="display:none">
+      <button class="btn btn-secondary" id="btn-open-folder">📂 Apri cartella</button>
+      <button class="btn btn-primary"   id="btn-new-session">↺ Nuova sessione</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

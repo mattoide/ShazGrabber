@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Cartelle dati (non versionare)
+uploads/
+downloads/
+shazam_download_logs/
+
+# Log
+*.log
+*.txt
+
+# OS
+.DS_Store
+Thumbs.db
