@@ -19,3 +19,4 @@ shazam_download_logs/
 # OS
 .DS_Store
 Thumbs.db
+/.claude
