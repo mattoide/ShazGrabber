@@ -1,6 +1,7 @@
 import os, threading
 from flask import Blueprint, request, jsonify
 from core.file_scanner import scan_folder
+import config
 
 bp = Blueprint("folder", __name__, url_prefix="/api/folder")
 _session = {}  # {path, files}
@@ -36,20 +37,38 @@ def browse():
 
 @bp.route("/scan", methods=["POST"])
 def scan():
-    data = request.get_json(force=True)
-    path = data.get("path", "").strip()
+    data  = request.get_json(force=True)
+    paths = data.get("paths", [])
 
-    if not path or not os.path.isdir(path):
-        return jsonify({"error": "Cartella non valida o non trovata"}), 400
+    # Retrocompatibilità: supporta anche campo singolo "path"
+    if not paths and data.get("path"):
+        paths = [data["path"]]
 
-    files = scan_folder(path)
-    _session["path"]  = path
+    paths = [p.strip() for p in paths if p and p.strip()]
+    invalid = [p for p in paths if not os.path.isdir(p)]
+    if invalid:
+        return jsonify({"error": f"Cartelle non trovate: {', '.join(invalid)}"}), 400
+
+    files = []
+    seen  = set()
+    for p in paths:
+        for f in scan_folder(p):
+            key = f["path"].lower()
+            if key not in seen:
+                seen.add(key)
+                files.append(f)
+
+    _session["paths"] = paths
     _session["files"] = files
 
     return jsonify({
         "total":   len(files),
         "preview": [f["filename"] for f in files[:10]],
     })
+
+@bp.route("/default", methods=["GET"])
+def default_folder():
+    return jsonify({"path": config.DOWNLOAD_FOLDER})
 
 def get_files():
     return _session.get("files", [])

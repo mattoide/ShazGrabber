@@ -272,6 +272,32 @@ input[type=range] {
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+/* ── Folder tags ─────────────────────────────────────── */
+.folder-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.folder-tag {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; font-size: .8rem; color: var(--txt);
+}
+.folder-tag .remove {
+  cursor: pointer; color: var(--txt-m); font-weight: 700; font-size: .9rem;
+}
+.folder-tag .remove:hover { color: var(--err); }
+
+/* ── Download tabs ────────────────────────────────────── */
+.dl-tabs { display: flex; gap: 4px; margin-bottom: 10px; margin-top: 16px; }
+.dl-tab {
+  background: transparent; border: 1px solid var(--border); color: var(--txt-m);
+  border-radius: 6px; padding: 6px 14px; font-size: .8rem; font-weight: 600;
+  cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 6px;
+}
+.dl-tab:hover { background: var(--bg3); color: var(--txt); }
+.dl-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.dl-tab-badge {
+  background: var(--err); color: #fff; font-size: .7rem; font-weight: 700;
+  padding: 1px 7px; border-radius: 10px; min-width: 20px; text-align: center;
+}
+
 /* ── Scrollbar ────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }

@@ -26,8 +26,12 @@ def match_library(shazam_songs, local_files, threshold=72):
         best_file  = None
 
         for i, ln in enumerate(local_norms):
-            t = fuzz.partial_ratio(_norm(song["title"]), ln)
-            a = fuzz.partial_ratio(_norm(song["artist"]), ln)
+            title_norm = _norm(song["title"])
+            artist_norm = _norm(song["artist"])
+            # token_set_ratio confronta parole intere, evitando falsi positivi
+            # come "red" trovato dentro "bored"
+            t = fuzz.token_set_ratio(title_norm, ln)
+            a = fuzz.token_set_ratio(artist_norm, ln)
             score = t * 0.65 + a * 0.35
             if score > best_score:
                 best_score = score

@@ -1,4 +1,4 @@
-import os, sys, subprocess
+import os, re, sys, subprocess
 
 def download_song(artist, title, output_folder, ffmpeg_path, progress_cb=None):
     """
@@ -7,7 +7,8 @@ def download_song(artist, title, output_folder, ffmpeg_path, progress_cb=None):
     Restituisce (success: bool, message: str).
     """
     query = f"ytsearch1:{artist} - {title}"
-    out_tmpl = os.path.join(output_folder, "%(title)s.%(ext)s")
+    safe_name = re.sub(r'[<>:"/\\|?*]', '_', f"{artist} - {title}")
+    out_tmpl = os.path.join(output_folder, f"{safe_name}.%(ext)s")
 
     cmd = [
         sys.executable, "-m", "yt_dlp",

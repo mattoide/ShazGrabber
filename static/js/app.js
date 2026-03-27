@@ -102,6 +102,23 @@ $("btn-step1").addEventListener("click", () => setStep(2));
 
 // ── STEP 2: Folder ─────────────────────────────────────────
 
+const folderPaths = [];
+
+function renderFolderTags() {
+  $("folder-tags").innerHTML = folderPaths.map((p, i) => `
+    <div class="folder-tag">
+      <span>${esc(p)}</span>
+      <span class="remove" data-idx="${i}">&times;</span>
+    </div>
+  `).join("");
+  $("folder-tags").querySelectorAll(".remove").forEach(el => {
+    el.addEventListener("click", () => {
+      folderPaths.splice(parseInt(el.dataset.idx), 1);
+      renderFolderTags();
+    });
+  });
+}
+
 $("btn-browse").addEventListener("click", async () => {
   try {
     const res  = await fetch("/api/folder/browse");
@@ -112,14 +129,30 @@ $("btn-browse").addEventListener("click", async () => {
   }
 });
 
-$("btn-scan").addEventListener("click", async () => {
+$("btn-add-folder").addEventListener("click", () => {
   const path = $("folder-path").value.trim();
   if (!path) { toast("Inserisci un percorso", "err"); return; }
+  if (folderPaths.includes(path)) { toast("Cartella già aggiunta", "err"); return; }
+  folderPaths.push(path);
+  renderFolderTags();
+  $("folder-path").value = "";
+});
+
+$("btn-scan").addEventListener("click", async () => {
+  // Se c'è un path nel campo ma non aggiunto, aggiungilo automaticamente
+  const current = $("folder-path").value.trim();
+  if (current && !folderPaths.includes(current)) {
+    folderPaths.push(current);
+    renderFolderTags();
+    $("folder-path").value = "";
+  }
+
+  if (folderPaths.length === 0) { toast("Aggiungi almeno una cartella", "err"); return; }
 
   const res  = await fetch("/api/folder/scan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path }),
+    body: JSON.stringify({ paths: folderPaths }),
   });
   const data = await res.json();
   if (!res.ok) { toast(data.error, "err"); return; }
@@ -164,36 +197,38 @@ $("btn-match").addEventListener("click", async () => {
   State.missing   = data.missing;
   State.ambiguous = data.ambiguous;
   State.matched   = data.matched;
-  State.selected  = new Set(data.missing.map((_, i) => i));
+  State.selected  = new Set(data.missing.map((_, i) => `m-${i}`));
 
   $("count-matched").textContent   = data.stats.matched;
   $("count-missing").textContent   = data.stats.missing;
   $("count-ambiguous").textContent = data.stats.ambiguous;
 
-  renderSongList("missing-list",   data.missing,   true);
-  renderSongList("ambiguous-list", data.ambiguous, false);
-  renderSongList("matched-list",   data.matched,   false);
+  renderSongList("missing-list",   data.missing,   "m");
+  renderSongList("ambiguous-list", data.ambiguous, "a");
+  renderSongList("matched-list",   data.matched,   null);
 
   updateSelectedCount();
   $("match-results").classList.remove("hidden");
-  $("btn-step3").disabled = data.missing.length === 0;
+  $("btn-step3").disabled = State.selected.size === 0;
   toast("Analisi completata", "ok");
 });
 
-function renderSongList(containerId, songs, checkable) {
+function renderSongList(containerId, songs, prefix) {
   const el = $(containerId);
+  const checkable = prefix !== null;
   if (!songs.length) {
     el.innerHTML = `<div style="color:var(--txt-m);padding:12px">Nessuna canzone in questa categoria.</div>`;
     return;
   }
   el.innerHTML = songs.map((s, i) => {
+    const key = `${prefix}-${i}`;
     const scoreClass = s.score >= 72 ? "score-ok" : "score-warn";
     const scoreTag   = s.score != null ? `<span class="song-score ${scoreClass}">${s.score}%</span>` : "";
     const cb = checkable
-      ? `<input type="checkbox" data-idx="${i}" ${State.selected.has(i) ? "checked" : ""}>`
+      ? `<input type="checkbox" data-key="${key}" ${State.selected.has(key) ? "checked" : ""}>`
       : "";
     return `
-      <div class="song-item ${checkable && State.selected.has(i) ? "selected" : ""}" data-idx="${i}">
+      <div class="song-item ${checkable && State.selected.has(key) ? "selected" : ""}" data-key="${key}">
         ${cb}
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title)}</div>
@@ -206,10 +241,10 @@ function renderSongList(containerId, songs, checkable) {
   if (checkable) {
     el.querySelectorAll("input[type=checkbox]").forEach(cb => {
       cb.addEventListener("change", e => {
-        const idx = parseInt(e.target.dataset.idx);
+        const key = e.target.dataset.key;
         const item = e.target.closest(".song-item");
-        if (e.target.checked) { State.selected.add(idx); item.classList.add("selected"); }
-        else                  { State.selected.delete(idx); item.classList.remove("selected"); }
+        if (e.target.checked) { State.selected.add(key); item.classList.add("selected"); }
+        else                  { State.selected.delete(key); item.classList.remove("selected"); }
         updateSelectedCount();
         $("btn-step3").disabled = State.selected.size === 0;
       });
@@ -221,12 +256,16 @@ function updateSelectedCount() {
   $("selected-count").textContent = `${State.selected.size} selezionate`;
 }
 
-// Select all
+// Select all (missing + ambiguous)
 $("select-all").addEventListener("change", e => {
-  State.selected = e.target.checked
-    ? new Set(State.missing.map((_, i) => i))
-    : new Set();
-  renderSongList("missing-list", State.missing, true);
+  if (e.target.checked) {
+    State.missing.forEach((_, i) => State.selected.add(`m-${i}`));
+    State.ambiguous.forEach((_, i) => State.selected.add(`a-${i}`));
+  } else {
+    State.selected.clear();
+  }
+  renderSongList("missing-list", State.missing, "m");
+  renderSongList("ambiguous-list", State.ambiguous, "a");
   updateSelectedCount();
   $("btn-step3").disabled = State.selected.size === 0;
 });
@@ -244,7 +283,10 @@ document.querySelectorAll(".tab").forEach(tab => {
 $("btn-back-2").addEventListener("click", () => setStep(2));
 
 $("btn-step3").addEventListener("click", () => {
-  const songs = [...State.selected].map(i => State.missing[i]);
+  const songs = [...State.selected].map(key => {
+    const [prefix, idx] = key.split("-");
+    return prefix === "m" ? State.missing[parseInt(idx)] : State.ambiguous[parseInt(idx)];
+  });
   State._songsToDownload = songs;
   setStep(4);
   $("dl-total").textContent = songs.length;
@@ -280,12 +322,28 @@ async function startDownload(songs) {
   listenSSE(data.session_id, songs.length);
 }
 
+// Download log tabs
+document.querySelectorAll(".dl-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".dl-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const target = tab.dataset.dlTab;
+    $("log-box").classList.toggle("hidden", target !== "all");
+    $("log-box-errors").classList.toggle("hidden", target !== "errors");
+  });
+});
+
 function listenSSE(sessionId, total) {
   const src = new EventSource(`/api/download/stream/${sessionId}`);
   let done = 0, ok = 0, err = 0;
 
-  const logBox = $("log-box");
+  const logBox    = $("log-box");
+  const errBox    = $("log-box-errors");
+  const errBadge  = $("err-badge");
   logBox.innerHTML = "";
+  errBox.innerHTML = '<div style="color:var(--txt-m);padding:12px" id="no-errors-msg">Nessun errore per ora.</div>';
+  errBadge.textContent = "0";
+  errBadge.classList.add("hidden");
 
   function addLog(msg, cls) {
     const div = document.createElement("div");
@@ -293,6 +351,18 @@ function listenSSE(sessionId, total) {
     div.textContent = msg;
     logBox.appendChild(div);
     logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  function addError(msg) {
+    const noMsg = $("no-errors-msg");
+    if (noMsg) noMsg.remove();
+    const div = document.createElement("div");
+    div.className = "log-item err";
+    div.textContent = msg;
+    errBox.appendChild(div);
+    errBox.scrollTop = errBox.scrollHeight;
+    errBadge.textContent = err;
+    errBadge.classList.remove("hidden");
   }
 
   src.addEventListener("song_start", e => {
@@ -329,6 +399,7 @@ function listenSSE(sessionId, total) {
     $("dl-progress-bar").style.width = Math.round(done / total * 100) + "%";
     const last = logBox.lastChild;
     if (last) { last.className = "log-item err"; last.textContent = `✗  ${d.song}`; }
+    addError(`✗  ${d.song}`);
   });
 
   src.addEventListener("done", e => {
@@ -379,3 +450,11 @@ function esc(s) {
 
 // Init
 setStep(1);
+
+// Precompila cartella di default
+fetch("/api/folder/default").then(r => r.json()).then(data => {
+  if (data.path) {
+    $("folder-path").value = data.path;
+    $("dl-folder").value   = data.path;
+  }
+});

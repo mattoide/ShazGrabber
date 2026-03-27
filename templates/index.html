@@ -74,15 +74,17 @@
 
   <!-- ── STEP 2: FOLDER ── -->
   <section class="panel hidden" id="panel-2">
-    <h2 class="panel-title">Cartella MP3 locale</h2>
-    <p class="panel-desc">Seleziona la cartella che contiene i tuoi file audio già scaricati.</p>
+    <h2 class="panel-title">Cartelle MP3 locali</h2>
+    <p class="panel-desc">Aggiungi le cartelle che contengono i tuoi file audio già scaricati.</p>
 
     <div class="folder-row">
       <input type="text" class="input-text" id="folder-path"
-             placeholder="C:\Users\matto\Videos\aTubeCatcher">
+             placeholder="Cartella musica…">
       <button class="btn btn-secondary" id="btn-browse">📂 Sfoglia</button>
+      <button class="btn btn-secondary" id="btn-add-folder">+ Aggiungi</button>
     </div>
-    <button class="btn btn-primary" id="btn-scan" style="margin-top:12px">Scansiona cartella</button>
+    <div class="folder-tags" id="folder-tags"></div>
+    <button class="btn btn-primary" id="btn-scan" style="margin-top:12px">Scansiona cartelle</button>
 
     <div class="folder-result hidden" id="folder-result">
       <div class="stats-row">
@@ -127,6 +129,11 @@
         </div>
       </div>
 
+      <div class="list-controls">
+        <label><input type="checkbox" id="select-all" checked> Seleziona tutto</label>
+        <span id="selected-count" class="badge badge-accent">0 selezionate</span>
+      </div>
+
       <div class="tabs">
         <button class="tab active" data-tab="missing">Mancanti</button>
         <button class="tab" data-tab="ambiguous">Incerte</button>
@@ -134,10 +141,6 @@
       </div>
 
       <div class="tab-content" id="tab-missing">
-        <div class="list-controls">
-          <label><input type="checkbox" id="select-all"> Seleziona tutto</label>
-          <span id="selected-count" class="badge badge-accent">0 selezionate</span>
-        </div>
         <div class="song-list" id="missing-list"></div>
       </div>
       <div class="tab-content hidden" id="tab-ambiguous">
@@ -161,7 +164,7 @@
     <div class="download-folder-row">
       <label>Salva in:</label>
       <input type="text" class="input-text" id="dl-folder"
-             placeholder="Lascia vuoto per usare la cartella 'downloads' del progetto">
+             placeholder="Cartella musica…">
       <button class="btn btn-secondary btn-sm" id="btn-dl-browse">📂</button>
     </div>
 
@@ -190,7 +193,14 @@
       </div>
     </div>
 
+    <div class="dl-tabs">
+      <button class="dl-tab active" data-dl-tab="all">Tutti</button>
+      <button class="dl-tab" data-dl-tab="errors">Errori <span class="dl-tab-badge hidden" id="err-badge">0</span></button>
+    </div>
     <div class="log-box" id="log-box"></div>
+    <div class="log-box hidden" id="log-box-errors">
+      <div style="color:var(--txt-m);padding:12px" id="no-errors-msg">Nessun errore per ora.</div>
+    </div>
 
     <div class="panel-footer" id="dl-footer" style="display:none">
       <button class="btn btn-secondary" id="btn-open-folder">📂 Apri cartella</button>
