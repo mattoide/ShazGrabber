@@ -14,7 +14,7 @@ Carica il CSV esportato da Shazam, confronta con una cartella locale, scarica le
 ```
 ShazGrabber/
 ├── app.py                  # Entry point Flask (porta 5000)
-├── config.py               # FFMPEG_PATH (auto-detect), cartelle default, soglia fuzzy
+├── config.py               # FFMPEG_PATH (auto-detect dir), DOWNLOAD_FOLDER (~/Music), soglia fuzzy
 ├── core/
 │   ├── csv_parser.py       # parse_shazam_csv(path) → lista {title, artist, date, url}
 │   ├── file_scanner.py     # scan_folder(path) → lista file audio locali
@@ -22,7 +22,7 @@ ShazGrabber/
 │   └── downloader.py       # download_song(artist, title, out_dir, ffmpeg, cb) → (bool, str)
 ├── api/
 │   ├── routes_upload.py    # POST /api/upload/csv
-│   ├── routes_folder.py    # GET /api/folder/browse (tkinter dialog), POST /api/folder/scan
+│   ├── routes_folder.py    # GET /api/folder/browse, POST /api/folder/scan (multi-cartella), GET /api/folder/default
 │   ├── routes_match.py     # POST /api/match/run
 │   └── routes_download.py  # POST /api/download/start, GET /api/download/stream (SSE)
 ├── static/css/style.css
@@ -36,11 +36,15 @@ ShazGrabber/
 - Usare **sempre** `core/downloader.py` per qualsiasi download MP3 — non duplicare la logica yt-dlp altrove.
 - Il comando usa `-f bestaudio/best` + `-x --audio-format mp3 --audio-quality 0`.
 - YouTube offre al massimo ~256 kbps; il VBR 0 è già il massimo ottenibile.
+- I file vengono salvati come `Artista - Titolo.mp3` (da Shazam), NON con il titolo YouTube.
+- `--ffmpeg-location` vuole la **directory** contenente ffmpeg, non il path dell'eseguibile.
 
 ### Fuzzy matching
 - Soglia default: **72%**
-- Peso: 65% titolo, 35% artista (`fuzz.partial_ratio`)
+- Peso: 65% titolo, 35% artista (`fuzz.token_set_ratio`)
+- NON usare `partial_ratio` — causa falsi positivi con titoli corti (es. "Red" matcha "bored")
 - Tre categorie: `matched` (≥72%), `ambiguous` (57–71%), `missing` (<57%)
+- Sia mancanti che incerte sono selezionabili per il download
 
 ### CSV Shazam
 - Encoding: UTF-8 BOM (`utf-8-sig`)
@@ -60,8 +64,16 @@ python app.py
 # → http://localhost:5000
 ```
 
+### Cartelle default
+- Scan e download usano `~/Music` (via `os.path.expanduser("~")`) — mai cartelle del progetto.
+- L'endpoint `GET /api/folder/default` espone il path al frontend.
+- Lo scan supporta **cartelle multiple** con deduplicazione (campo `paths` nel JSON).
+
+### UI
+- Step 4 ha un pulsante "Avvia download" esplicito — il download NON parte in automatico.
+- Tab "Errori" separata nel log download con badge contatore.
+- "Seleziona tutto" copre sia mancanti che incerte.
+
 ## File collegati fuori dal progetto
 - `C:\Users\matto\Scripts\shazam_download.py` — script CLI che importa da questo progetto
 - `C:\Users\matto\Videos\shazamlibrary.csv` — CSV Shazam dell'utente
-- `C:\Users\matto\Videos\Shazam_Download\` — cartella download default
-- `C:\Users\matto\Videos\aTubeCatcher\` — libreria MP3 locale principale dell'utente
