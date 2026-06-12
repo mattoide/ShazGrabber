@@ -6,6 +6,11 @@ DOWNLOAD_FOLDER  = os.path.join(os.path.expanduser("~"), "Music")
 FUZZY_THRESHOLD  = 72
 MAX_CONTENT_MB   = 10
 
+# File cookies opzionale (formato Netscape) per scaricare i video YouTube con
+# restrizione d'età. Esportalo una volta dal browser e salvalo qui. Se non
+# esiste, i download normali funzionano lo stesso, solo gli age-restricted no.
+COOKIES_FILE     = os.path.join(os.path.expanduser("~"), "shazgrabber_cookies.txt")
+
 # Cerca ffmpeg automaticamente
 def find_ffmpeg():
     import shutil

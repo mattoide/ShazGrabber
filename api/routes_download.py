@@ -36,8 +36,9 @@ def _worker(session_id, songs, output_folder):
             if info["type"] == "progress":
                 q.put({"event": "progress", "data": {"song": lbl, "percent": info["percent"]}})
 
-        ffmpeg = config.FFMPEG_PATH or "ffmpeg"
-        success, err_msg = download_song(song["artist"], song["title"], output_folder, ffmpeg, cb)
+        ffmpeg  = config.FFMPEG_PATH or "ffmpeg"
+        cookies = config.COOKIES_FILE if os.path.exists(config.COOKIES_FILE) else None
+        success, err_msg = download_song(song["artist"], song["title"], output_folder, ffmpeg, cb, cookies)
 
         if success:
             sess["status"]["ok"] += 1
